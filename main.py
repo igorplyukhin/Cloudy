@@ -65,10 +65,16 @@ def get_dir(cloud_path):
             click.secho(item['path'])
 
 
+@cli.command()
+@click.argument('cloud_path')
+def create_dir(cloud_path):
+    print(STORAGE.create_cloud_dir(cloud_path))
+
+
 if __name__ == '__main__':
     try:
         cli()
     except ApiError as e:
-        click.secho(e.description, fg='red')
+        click.secho(f'ApiError: {e.description}', fg='red', bold=True)
     except FileNotFoundError:
-        click.secho('File or directory does not exist', fg='red')
+        click.secho('File or directory does not exist', fg='red', bold=True)
