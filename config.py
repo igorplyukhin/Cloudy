@@ -1,13 +1,19 @@
 import os
+import yandex_disc
+import dropbox
 
-token = os.getenv('YandexApiToken')
+STORAGE = dropbox
 
-base_url = 'https://cloud-api.yandex.net/v1/disk'
+YANDEX_TOKEN = os.getenv('YandexApiToken')
 
-base_headers = {'Authorization': f'OAuth {token}'}
+YANDEX_URL = 'https://cloud-api.yandex.net/v1/disk/resources'
 
-cli_main_color = 'cyan'
+YANDEX_HEADERS = {'Authorization': f'OAuth {YANDEX_TOKEN}'}
 
-cli_error_color = 'red'
+DROPBOX_TOKEN = 'R_0dEln0Nr8AAAAAAAAAAVMyyYTNvf1j91IrvAlGJwmXhA2YC1e_8-behrlifesN'
 
-cli_success_color = 'green'
+DROPBOX_CONTENT_URL = 'https://content.dropboxapi.com/2/files'
+
+DROPBOX_API_URL = 'https://api.dropboxapi.com/2/files/list_folder'
+
+DROPBOX_AUTH_HEADERS = {'Authorization': f'Bearer {DROPBOX_TOKEN}'}

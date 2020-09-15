@@ -1,5 +1,5 @@
 import click
-import yandex_disc as yd
+from config import STORAGE
 from ApiError import ApiError
 
 
@@ -15,7 +15,7 @@ def cli():
 @click.argument('cloud_path')
 def download_file(local_path, cloud_path):
     click.secho('Downloading...', fg='green')
-    yd.download_file(local_path, cloud_path)
+    STORAGE.download_file(local_path, cloud_path)
     click.secho('Success', fg='green')
 
 
@@ -24,10 +24,15 @@ def download_file(local_path, cloud_path):
 @click.argument('local_path')
 @click.argument('cloud_path')
 def upload_file(local_path, cloud_path, is_zipped):
+    """
+        LOCALPATH is the path of a file to upload
+
+        CLOUDPATH is the path with the name of a new file in your cloud
+    """
     if is_zipped:
-        yd.upload_zip_file(local_path, cloud_path)
+        STORAGE.upload_zip_file(local_path, cloud_path)
     else:
-        yd.upload_file(local_path, cloud_path)
+        STORAGE.upload_file(local_path, cloud_path)
 
 
 @cli.command()
@@ -36,15 +41,28 @@ def upload_file(local_path, cloud_path, is_zipped):
 @click.argument('cloud_path')
 def upload_dir(local_path, cloud_path, is_zipped):
     if is_zipped:
-        yd.upload_zip_dir(local_path, cloud_path)
+        STORAGE.upload_zip_dir(local_path, cloud_path)
     else:
-        yd.upload_dir(local_path, cloud_path)
+        STORAGE.upload_dir(local_path, cloud_path)
 
 
 @cli.command()
 @click.argument('cloud_path')
 def get_dir(cloud_path):
-    yd.get_dir(cloud_path)
+    """
+    Prints cloud folder contents
+
+    :param cloud_path: Specify folder to show contents
+
+    Yandex root folder = '/'; Dropbox root folder ''
+    """
+    resp = STORAGE.get_dir(cloud_path)
+    try:
+        for item in resp.json()['entries']:
+            click.secho(item['path_display'])
+    except KeyError:
+        for item in resp.json()['_embedded']['items']:
+            click.secho(item['path'])
 
 
 if __name__ == '__main__':
