@@ -4,6 +4,7 @@ import config as conf
 import os
 from ApiError import send_req_with_status_code_check
 from http import HTTPStatus
+import yandex_disc
 
 UPLOAD_REQUEST_LIMIT_BYTES = 1024 ** 2 * 150
 
@@ -26,7 +27,7 @@ def get_dir(cloud_path):
     headers['Content-Type'] = 'application/json'
     data = {"path": cloud_path}
     resp = send_req_with_status_code_check(
-        lambda: requests.post(url=conf.DROPBOX_API_URL, headers=headers, data=json.dumps(data)), HTTPStatus.OK)
+        lambda: requests.post(url=f'{conf.DROPBOX_API_URL}/list_folder', headers=headers, data=json.dumps(data)), HTTPStatus.OK)
 
     return resp
 
@@ -37,11 +38,11 @@ def upload_file(local_path, cloud_path):
     session_id = start_upload_session(data).json()['session_id']
     file_size = os.path.getsize(local_path)
     while file_size - file.tell() > UPLOAD_REQUEST_LIMIT_BYTES:
-        offset = file.tell()#!!!
+        offset = file.tell()  # !!!
         data = file.read(UPLOAD_REQUEST_LIMIT_BYTES)
         append_to_upload_session(session_id, offset, data)
 
-    offset = file.tell()#!!!
+    offset = file.tell()  # !!!
     data = file.read(UPLOAD_REQUEST_LIMIT_BYTES)
     resp = finish_upload_session(session_id, offset, cloud_path, data)
     file.close()
@@ -49,7 +50,7 @@ def upload_file(local_path, cloud_path):
 
 
 def start_upload_session(data):
-    headers = conf.DROPBOX_AUTH_HEADERS
+    headers = conf.DROPBOX_AUTH_HEADERS.copy()
     headers['Content-Type'] = 'application/octet-stream'
     resp = send_req_with_status_code_check(
         lambda: requests.post(url=f'{conf.DROPBOX_CONTENT_URL}/upload_session/start', headers=headers, data=data),
@@ -58,7 +59,7 @@ def start_upload_session(data):
 
 
 def append_to_upload_session(session_id, offset, data):
-    headers = conf.DROPBOX_AUTH_HEADERS
+    headers = conf.DROPBOX_AUTH_HEADERS.copy()
     headers['Content-Type'] = 'application/octet-stream'
     headers['Dropbox-API-Arg'] = json.dumps({'cursor': {'session_id': session_id, 'offset': offset}})
     resp = send_req_with_status_code_check(
@@ -68,15 +69,40 @@ def append_to_upload_session(session_id, offset, data):
 
 
 def finish_upload_session(session_id, offset, cloud_path, data):
-    headers = conf.DROPBOX_AUTH_HEADERS
+    headers = conf.DROPBOX_AUTH_HEADERS.copy()
     headers['Content-Type'] = 'application/octet-stream'
     headers['Dropbox-API-Arg'] = json.dumps(
-        {'cursor': {'session_id': session_id, 'offset': offset}, 'commit': {'path': cloud_path}})
+        {'cursor': {'session_id': session_id, 'offset': offset},
+         'commit': {'path': cloud_path, 'strict_conflict': True}})
     resp = send_req_with_status_code_check(
         lambda: requests.post(url=f'{conf.DROPBOX_CONTENT_URL}/upload_session/finish', headers=headers, data=data),
         HTTPStatus.OK)
     return resp
 
 
+def create_cloud_dir(cloud_path):
+    headers = conf.DROPBOX_AUTH_HEADERS.copy()
+    headers['Content-Type'] = 'application/json'
+    data = json.dumps({'path': cloud_path})
+    resp = send_req_with_status_code_check(
+        lambda: requests.post(url=f'{conf.DROPBOX_API_URL}/create_folder_v2', headers=headers, data=data),
+        HTTPStatus.OK)
+    return resp
+
+
+def upload_dir(local_path, cloud_path):
+    if not os.path.exists(local_path):
+        raise FileNotFoundError
+
+    create_cloud_dir(cloud_path)
+    for filename in os.listdir(local_path):
+        local_file_path = os.path.join(local_path, filename)
+        cloud_file_path = os.path.join(cloud_path, filename)
+        try:
+            upload_file(local_file_path, cloud_file_path)
+        except IsADirectoryError:
+            upload_dir(local_file_path, cloud_file_path)
+
+
 if __name__ == '__main__':
-    upload_file('Разгоны_.mp4', '/1234.mp4')
+    print(upload_file('1.jpg', '/fasfafa.jpg').text)
