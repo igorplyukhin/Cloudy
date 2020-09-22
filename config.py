@@ -2,7 +2,7 @@ import os
 import yandex_disc
 import dropbox
 
-STORAGE = dropbox
+STORAGE = yandex_disc
 
 YANDEX_TOKEN = os.getenv('YandexApiToken')
 

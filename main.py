@@ -14,9 +14,14 @@ def cli():
 @click.option('-lp', '--local_path', default='.', help='Path to save file')
 @click.argument('cloud_path')
 def download_file(local_path, cloud_path):
-    click.secho('Downloading...', fg='green')
+    """
+        Downloads file from cloud
+
+        CLOUDPATH is the path with the name of a new file that you want to dowload
+    """
+    click.secho('Downloading...', fg='green', bold=True)
     STORAGE.download_file(local_path, cloud_path)
-    click.secho('Success', fg='green')
+    click.secho('Success', fg='green', bold=True)
 
 
 @cli.command()
@@ -25,14 +30,18 @@ def download_file(local_path, cloud_path):
 @click.argument('cloud_path')
 def upload_file(local_path, cloud_path, is_zipped):
     """
-        LOCALPATH is the path of a file to upload
+        Uploads file to cloud
 
-        CLOUDPATH is the path with the name of a new file in your cloud
+        LOCALPATH is the path of a file to upload './local_folder/file.txt'
+
+        CLOUDPATH is the path with the name of a new file '/cloud_folder.txt'
     """
+    click.secho('Uploading...', fg='green', bold=True)
     if is_zipped:
         STORAGE.upload_zip_file(local_path, cloud_path)
     else:
         STORAGE.upload_file(local_path, cloud_path)
+    click.secho('Success', fg='green', bold=True)
 
 
 @cli.command()
@@ -40,23 +49,25 @@ def upload_file(local_path, cloud_path, is_zipped):
 @click.argument('local_path')
 @click.argument('cloud_path')
 def upload_dir(local_path, cloud_path, is_zipped):
+    click.secho('Uploading...', fg='green', bold=True)
     if is_zipped:
         STORAGE.upload_zip_dir(local_path, cloud_path)
     else:
         STORAGE.upload_dir(local_path, cloud_path)
+    click.secho('Success', fg='green', bold=True)
 
 
 @cli.command()
 @click.argument('cloud_path')
-def get_dir(cloud_path):
+def list_dir(cloud_path):
     """
-    Prints cloud folder contents
+        Prints cloud folder contents
 
-    :param cloud_path: Specify folder to show contents
+        CLOUDPATH is folder to show contents
 
-    Yandex root folder = '/'; Dropbox root folder ''
+        Yandex root folder = '/'; Dropbox root folder ''
     """
-    resp = STORAGE.get_dir(cloud_path)
+    resp = STORAGE.list_dir(cloud_path)
     try:
         for item in resp.json()['entries']:
             click.secho(item['path_display'])
@@ -68,13 +79,23 @@ def get_dir(cloud_path):
 @cli.command()
 @click.argument('cloud_path')
 def create_dir(cloud_path):
-    print(STORAGE.create_cloud_dir(cloud_path))
+    """
+        Creates cloud folder
+
+        CLOUDPATH is the path of new folder
+    """
+    STORAGE.create_cloud_dir(cloud_path)
+    click.secho('Success', fg='green', bold=True)
 
 
-if __name__ == '__main__':
+def main():
     try:
         cli()
     except ApiError as e:
         click.secho(f'ApiError: {e.description}', fg='red', bold=True)
     except FileNotFoundError:
         click.secho('File or directory does not exist', fg='red', bold=True)
+
+
+if __name__ == '__main__':
+    main()

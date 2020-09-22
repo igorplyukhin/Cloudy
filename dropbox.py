@@ -4,7 +4,7 @@ import config as conf
 import os
 from ApiError import send_req_with_status_code_check
 from http import HTTPStatus
-import yandex_disc
+import common_funcs
 
 UPLOAD_REQUEST_LIMIT_BYTES = 1024 ** 2 * 150
 
@@ -22,7 +22,7 @@ def download_file(local_path, cloud_path):
     return resp
 
 
-def get_dir(cloud_path):
+def list_dir(cloud_path):
     headers = conf.DROPBOX_AUTH_HEADERS
     headers['Content-Type'] = 'application/json'
     data = {"path": cloud_path}
@@ -91,17 +91,15 @@ def create_cloud_dir(cloud_path):
 
 
 def upload_dir(local_path, cloud_path):
-    if not os.path.exists(local_path):
-        raise FileNotFoundError
+    common_funcs.upload_dir(local_path, cloud_path, create_cloud_dir, upload_file)
 
-    create_cloud_dir(cloud_path)
-    for filename in os.listdir(local_path):
-        local_file_path = os.path.join(local_path, filename)
-        cloud_file_path = os.path.join(cloud_path, filename)
-        try:
-            upload_file(local_file_path, cloud_file_path)
-        except IsADirectoryError:
-            upload_dir(local_file_path, cloud_file_path)
+
+def upload_zip_file(local_path, cloud_path):
+    return common_funcs.upload_zip_file(local_path, cloud_path, upload_file)
+
+
+def upload_zip_dir(local_path, cloud_path):
+    return common_funcs.upload_zip_dir(local_path,cloud_path, upload_file)
 
 
 if __name__ == '__main__':

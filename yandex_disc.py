@@ -2,9 +2,15 @@ import config as conf
 from http import HTTPStatus
 import requests
 import os
-from os.path import basename
-import zipfile
 from ApiError import send_req_with_status_code_check
+import common_funcs
+
+
+def list_dir(cloud_path):
+    resp = send_req_with_status_code_check(
+        lambda: requests.get(conf.YANDEX_URL, params={'path': cloud_path}, headers=conf.YANDEX_HEADERS),
+        HTTPStatus.OK)
+    return resp
 
 
 def download_file(local_path, cloud_path):
@@ -33,44 +39,6 @@ def upload_file(local_path, cloud_path):
     return resp
 
 
-def upload_zip_file(local_path, cloud_path):
-    file_name = basename(local_path)
-    zip_file_name = os.path.splitext(file_name)[0] + '.zip'
-    with zipfile.ZipFile(zip_file_name, 'w', zipfile.ZIP_DEFLATED) as myzip:
-        myzip.write(local_path, file_name)
-    resp = upload_file(zip_file_name, cloud_path)
-    os.remove(zip_file_name)
-    return resp
-
-
-# test empty dir
-def upload_dir(local_path, cloud_path):
-    if not os.path.exists(local_path):
-        raise FileNotFoundError
-
-    create_cloud_dir(cloud_path)
-    for filename in os.listdir(local_path):
-        local_file_path = os.path.join(local_path, filename)
-        print(local_file_path)
-        cloud_file_path = os.path.join(cloud_path, filename)
-        try:
-            upload_file(local_file_path, cloud_file_path)
-        except IsADirectoryError:
-            upload_dir(local_file_path, cloud_file_path)
-
-
-def upload_zip_dir(local_path, cloud_path):
-    zip_file_name = basename(local_path) + '.zip'
-    with zipfile.ZipFile(zip_file_name, 'w', zipfile.ZIP_DEFLATED) as myzip:
-        for root, dirs, files in os.walk(local_path):
-            for file in files:
-                myzip.write(os.path.join(root, file))
-
-    resp = upload_file(zip_file_name, cloud_path)
-    os.remove(zip_file_name)
-    return resp
-
-
 def create_cloud_dir(cloud_path):
     resp = send_req_with_status_code_check(
         lambda: requests.put(conf.YANDEX_URL, params={'path': cloud_path}, headers=conf.YANDEX_HEADERS),
@@ -78,8 +46,13 @@ def create_cloud_dir(cloud_path):
     return resp
 
 
-def get_dir(cloud_path):
-    resp = send_req_with_status_code_check(
-        lambda: requests.get(conf.YANDEX_URL, params={'path': cloud_path}, headers=conf.YANDEX_HEADERS),
-        HTTPStatus.OK)
-    return resp
+def upload_dir(local_path, cloud_path):
+    common_funcs.upload_dir(local_path, cloud_path, create_cloud_dir, upload_file)
+
+
+def upload_zip_file(local_path, cloud_path):
+    return common_funcs.upload_zip_file(local_path, cloud_path, upload_file)
+
+
+def upload_zip_dir(local_path, cloud_path):
+    return common_funcs.upload_zip_dir(local_path,cloud_path, upload_file)
