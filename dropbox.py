@@ -1,8 +1,7 @@
-import requests
 import json
 import config as conf
 import os
-from ApiError import send_req_with_status_code_check
+from ApiError import post_safely
 from http import HTTPStatus
 import common_funcs
 
@@ -14,8 +13,7 @@ def download_file(local_path, cloud_path):
         raise FileNotFoundError
     headers = conf.DROPBOX_AUTH_HEADERS
     headers['Dropbox-API-Arg'] = json.dumps({'path': cloud_path})
-    resp = send_req_with_status_code_check(
-        lambda: requests.post(url=f'{conf.DROPBOX_CONTENT_URL}/download', headers=headers), HTTPStatus.OK)
+    resp = post_safely(url=f'{conf.DROPBOX_CONTENT_URL}/download', headers=headers, ok_code=HTTPStatus.OK)
     file_name = cloud_path.split('/')[-1]
     with open(f'{local_path}/{file_name}', 'wb') as f:
         f.write(resp.content)
@@ -26,10 +24,8 @@ def list_dir(cloud_path):
     headers = conf.DROPBOX_AUTH_HEADERS
     headers['Content-Type'] = 'application/json'
     data = {"path": cloud_path}
-    resp = send_req_with_status_code_check(
-        lambda: requests.post(url=f'{conf.DROPBOX_API_URL}/list_folder', headers=headers, data=json.dumps(data)), HTTPStatus.OK)
-
-    return resp
+    return post_safely(url=f'{conf.DROPBOX_API_URL}/list_folder', headers=headers, data=json.dumps(data),
+                       ok_code=HTTPStatus.OK)
 
 
 def upload_file(local_path, cloud_path):
@@ -52,20 +48,16 @@ def upload_file(local_path, cloud_path):
 def start_upload_session(data):
     headers = conf.DROPBOX_AUTH_HEADERS.copy()
     headers['Content-Type'] = 'application/octet-stream'
-    resp = send_req_with_status_code_check(
-        lambda: requests.post(url=f'{conf.DROPBOX_CONTENT_URL}/upload_session/start', headers=headers, data=data),
-        HTTPStatus.OK)
-    return resp
+    return post_safely(url=f'{conf.DROPBOX_CONTENT_URL}/upload_session/start', headers=headers, data=data,
+                       ok_code=HTTPStatus.OK)
 
 
 def append_to_upload_session(session_id, offset, data):
     headers = conf.DROPBOX_AUTH_HEADERS.copy()
     headers['Content-Type'] = 'application/octet-stream'
     headers['Dropbox-API-Arg'] = json.dumps({'cursor': {'session_id': session_id, 'offset': offset}})
-    resp = send_req_with_status_code_check(
-        lambda: requests.post(url=f'{conf.DROPBOX_CONTENT_URL}/upload_session/append_v2', headers=headers,
-                              data=data), HTTPStatus.OK)
-    return resp
+    return post_safely(url=f'{conf.DROPBOX_CONTENT_URL}/upload_session/append_v2', headers=headers,
+                       data=data, ok_code=HTTPStatus.OK)
 
 
 def finish_upload_session(session_id, offset, cloud_path, data):
@@ -74,24 +66,20 @@ def finish_upload_session(session_id, offset, cloud_path, data):
     headers['Dropbox-API-Arg'] = json.dumps(
         {'cursor': {'session_id': session_id, 'offset': offset},
          'commit': {'path': cloud_path, 'strict_conflict': True}})
-    resp = send_req_with_status_code_check(
-        lambda: requests.post(url=f'{conf.DROPBOX_CONTENT_URL}/upload_session/finish', headers=headers, data=data),
-        HTTPStatus.OK)
-    return resp
+    return post_safely(url=f'{conf.DROPBOX_CONTENT_URL}/upload_session/finish', headers=headers, data=data,
+                       ok_code=HTTPStatus.OK)
 
 
-def create_cloud_dir(cloud_path):
+def mkdir(cloud_path):
     headers = conf.DROPBOX_AUTH_HEADERS.copy()
     headers['Content-Type'] = 'application/json'
     data = json.dumps({'path': cloud_path})
-    resp = send_req_with_status_code_check(
-        lambda: requests.post(url=f'{conf.DROPBOX_API_URL}/create_folder_v2', headers=headers, data=data),
-        HTTPStatus.OK)
-    return resp
+    return post_safely(url=f'{conf.DROPBOX_API_URL}/create_folder_v2', headers=headers, data=data,
+                       ok_code=HTTPStatus.OK)
 
 
 def upload_dir(local_path, cloud_path):
-    common_funcs.upload_dir(local_path, cloud_path, create_cloud_dir, upload_file)
+    common_funcs.upload_dir(local_path, cloud_path, mkdir, upload_file)
 
 
 def upload_zip_file(local_path, cloud_path):
@@ -99,8 +87,4 @@ def upload_zip_file(local_path, cloud_path):
 
 
 def upload_zip_dir(local_path, cloud_path):
-    return common_funcs.upload_zip_dir(local_path,cloud_path, upload_file)
-
-
-if __name__ == '__main__':
-    print(upload_file('1.jpg', '/fasfafa.jpg').text)
+    return common_funcs.upload_zip_dir(local_path, cloud_path, upload_file)

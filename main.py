@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import click
 from config import STORAGE
 from ApiError import ApiError
@@ -78,13 +79,13 @@ def list_dir(cloud_path):
 
 @cli.command()
 @click.argument('cloud_path')
-def create_dir(cloud_path):
+def mkdir(cloud_path):
     """
         Creates cloud folder
 
         CLOUDPATH is the path of new folder
     """
-    STORAGE.create_cloud_dir(cloud_path)
+    STORAGE.mkdir(cloud_path)
     click.secho('Success', fg='green', bold=True)
 
 

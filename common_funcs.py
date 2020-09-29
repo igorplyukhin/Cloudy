@@ -4,18 +4,18 @@ import zipfile
 
 
 # test empty dir
-def upload_dir(local_path, cloud_path, create_cloud_dir, upload_file):
+def upload_dir(local_path, cloud_path, mkdir, upload_file):
     if not os.path.exists(local_path):
         raise FileNotFoundError
 
-    create_cloud_dir(cloud_path)
+    mkdir(cloud_path)
     for filename in os.listdir(local_path):
         local_file_path = os.path.join(local_path, filename)
         cloud_file_path = os.path.join(cloud_path, filename)
         try:
             upload_file(local_file_path, cloud_file_path)
         except IsADirectoryError:
-            upload_dir(local_file_path, cloud_file_path, create_cloud_dir, upload_file)
+            upload_dir(local_file_path, cloud_file_path, mkdir, upload_file)
 
 
 def upload_zip_dir(local_path, cloud_path, upload_file):
