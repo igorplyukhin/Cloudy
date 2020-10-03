@@ -10,31 +10,34 @@ class ApiError(Exception):
 
 def send_req_with_status_code_check(delegate):
     def wrapper(*args, **kwargs):
-        if kwargs['ok_code'] is None:
-            raise ValueError('ok_code cant be empty')
         resp = delegate(*args, **kwargs)
-        check_status_code(resp, kwargs['ok_code'])
+        check_status_code(resp)
         return resp
     return wrapper
 
 
 @send_req_with_status_code_check
-def post_safely(url='', headers=None, params=None, data=None, ok_code=None):
+def post_safely(url='', headers=None, params=None, data=None):
     return requests.post(url=url, headers=headers, params=params, data=data)
 
 
 @send_req_with_status_code_check
-def get_safely(url='', headers=None, params=None, data=None, ok_code=None):
+def get_safely(url='', headers=None, params=None, data=None):
     return requests.get(url=url, headers=headers, params=params, data=data)
 
 
 @send_req_with_status_code_check
-def put_safely(url='', headers=None, params=None, data=None, ok_code=None):
+def put_safely(url='', headers=None, params=None, data=None):
     return requests.put(url=url, headers=headers, params=params, data=data)
 
 
-def check_status_code(resp, ok_code):
-    if resp.status_code != ok_code:
+@send_req_with_status_code_check
+def delete_safely(url='', headers=None, params=None, data=None):
+    return requests.delete(url=url, headers=headers, params=params, data=data)
+
+
+def check_status_code(resp):
+    if str(resp.status_code)[0] != '2':
         try:
             try:
                 error_description = resp.json()['description']

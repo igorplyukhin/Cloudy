@@ -11,7 +11,7 @@ def cli():
     pass
 
 
-@cli.command()
+@cli.command('dfile')
 @click.option('-lp', '--local_path', default='.', help='Path to save file')
 @click.argument('cloud_path')
 def download_file(local_path, cloud_path):
@@ -25,7 +25,7 @@ def download_file(local_path, cloud_path):
     click.secho('Success', fg='green', bold=True)
 
 
-@cli.command()
+@cli.command('ufile')
 @click.option('-z', '--is_zipped', is_flag=True, help='Specify if you want to compress file')
 @click.argument('local_path')
 @click.argument('cloud_path')
@@ -45,7 +45,7 @@ def upload_file(local_path, cloud_path, is_zipped):
     click.secho('Success', fg='green', bold=True)
 
 
-@cli.command()
+@cli.command('udir')
 @click.option('-z', '--is_zipped', is_flag=True, help='Specify if eou want to compress dir')
 @click.argument('local_path')
 @click.argument('cloud_path')
@@ -58,7 +58,7 @@ def upload_dir(local_path, cloud_path, is_zipped):
     click.secho('Success', fg='green', bold=True)
 
 
-@cli.command()
+@cli.command('list')
 @click.argument('cloud_path')
 def list_dir(cloud_path):
     """
@@ -70,14 +70,14 @@ def list_dir(cloud_path):
     """
     resp = STORAGE.list_dir(cloud_path)
     try:
-        for item in resp.json()['entries']:
+        for item in resp.json()['entries']:  # Dropbox
             click.secho(item['path_display'])
     except KeyError:
-        for item in resp.json()['_embedded']['items']:
+        for item in resp.json()['_embedded']['items']:  # Yandex
             click.secho(item['path'])
 
 
-@cli.command()
+@cli.command('mkdir')
 @click.argument('cloud_path')
 def mkdir(cloud_path):
     """
@@ -86,6 +86,18 @@ def mkdir(cloud_path):
         CLOUDPATH is the path of new folder
     """
     STORAGE.mkdir(cloud_path)
+    click.secho('Success', fg='green', bold=True)
+
+
+@cli.command()
+@click.argument('cloud_path')
+def rm(cloud_path):
+    """
+        Delete cloud folder of file
+
+        CLOUDPATH is the path to delete
+    """
+    STORAGE.rm(cloud_path)
     click.secho('Success', fg='green', bold=True)
 
 
