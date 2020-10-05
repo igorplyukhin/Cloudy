@@ -11,7 +11,7 @@ UPLOAD_REQUEST_LIMIT_BYTES = 1024 ** 2 * 150
 def download_file(local_path, cloud_path):
     if not os.path.exists(local_path):
         raise FileNotFoundError
-    headers = conf.DROPBOX_AUTH_HEADERS
+    headers = conf.DROPBOX_AUTH_HEADERS.copy()
     headers['Dropbox-API-Arg'] = json.dumps({'path': cloud_path})
     resp = post_safely(url=f'{conf.DROPBOX_CONTENT_URL}/download', headers=headers)
     file_name = cloud_path.split('/')[-1]
@@ -21,7 +21,7 @@ def download_file(local_path, cloud_path):
 
 
 def list_dir(cloud_path):
-    headers = conf.DROPBOX_AUTH_HEADERS
+    headers = conf.DROPBOX_AUTH_HEADERS.copy()
     headers['Content-Type'] = 'application/json'
     data = {"path": cloud_path}
     return post_safely(url=f'{conf.DROPBOX_API_URL}/list_folder', headers=headers, data=json.dumps(data))
